@@ -1,14 +1,24 @@
 'use strict';
 
 const router = require('../lib/router.js');
+const Notes = require('../models/notes.js');
 
-/**
- * GET Route (/)
- * Accepts an optional "name" query string parameter and says Hello
- * test with httpie:
- *     http http://localhost:8080
- *     http http://localhost:8080?name=John
- */
+let sendJSON = (res,data) => {
+  res.statusCode = 200;
+  res.statusMessage = 'OK';
+  res.setHeader('Content-Type', 'application/json');
+  res.write(JSON.stringify(data));
+  res.end();
+};
+let serverError = (res, err) => {
+  let error = {error:err};
+  res.statusCode = 500;
+  res.statusMessage = 'Server Error';
+  res.setHeader('Content-Type', 'application/json');
+  res.write(JSON.stringify(error));
+  res.end();
+};
+
 router.get('/', (req,res) => {
   res.statusCode = 200;
   res.statusMessage = 'OK';
@@ -17,68 +27,36 @@ router.get('/', (req,res) => {
   res.end();
 });
 
-router.get('/api/v1/dogs', (req, res) => {
-  const id = req.query.id;
-  if(id == 1976) {
-    res.statusCode = 200;
-    let msg = `ID: ${req.query.id}`;
-    res.write(msg);
-  } else if(id) {
-    res.statusCode = 404;
-    res.statusMessage = 'not found';
+router.get('/api/v1/notes', (req, res) => {
+  if ( req.query.id ) {
+    Notes.findOne(req.query.id)
+      .then( data => sendJSON(res,data) )
+      .catch( err => serverError(res,err) );
   } else {
-    res.statusCode = 400;
-    res.statusMessage = 'bad request';
-    console.log(res.statusMessage);
-    //res.write((JSON.stringify({error: 'bad request'})));
+    Notes.fetchAll()
+      .then( data => sendJSON(res,data) )
+      .catch( err => serverError(res,err) );
   }
-  res.end();
 });
-/**
- * POST Route (/data)
- * Accepts a JSON object and simply regurgitates it back to the browser
- * test with httpie:
- *     echo '{"title":"Go Home","content":"foobar"}' | http post http://localhost:8080/data
- */
-router.post('/data', (req,res) => {
+
+router.post('/api/v1/notes', (req,res) => {
   console.log('here in post');
-  res.statusCode = 200;
-  res.statusMessage = 'OK';
-  if(req.body) {
-    res.write( JSON.stringify(req.body));
-  } else {
-    res.statusCode = 400;
-  }
-  res.end();
+  let record = new Notes(req.body);
+  record.save()
+    .then(data => sendJSON(res, data))
+    .catch(console.error);
 });
 
-router.put('/update', (req, res) => {
-  const id = req.query.id;
-  if(id) {
-    console.log('here in PUT');
-    res.statusCode = 200;
-    res.statusMessage = 'OK';
-    let msg = '{"ID": "`${req.query.id}`", "content": "PUT to the test"}';
-    res.write(JSON.stringify(msg));
-  } else {
-    console.log('here in PUT error');
-    res.statusCode = 400;
-    res.statusMessage = 'bad request';
-    console.log(res.statusMessage);
+router.delete('/api/v1/notes', (req,res) => {
+  console.log('here in DELETE');
+  if(req.query.id) {
+    Notes.deleteOne(req.query.id)
+      .then(success => {
+        let data = {id:req.query.id, deleted: success};
+        sendJSON(res,data);
+      })
+      .catch(console.error);
   }
-  res.end();
-
-  router.delete('/delete', (req,res) => {
-    console.log('here in DELETE');
-    const id = req.query.id;
-    if(id === req.body.id) {
-      delete(req.query.id);
-      let msg = `Deleted ID: ${req.query.id}`;
-      res.write(msg);
-      res.statusCode = 400;
-
-    }
-  });
 });
 
 module.exports = {};
