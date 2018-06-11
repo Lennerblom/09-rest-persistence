@@ -4,7 +4,7 @@ ___
 ###### TRAVIS: 
 ###### HEROKU: 
 ###### MASTER:
-###### PR: 
+###### PR: https://github.com/Lennerblom/09-rest-persistence/pull/1
 
 ###**In order to run my app, do the following:**
 
