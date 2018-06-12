@@ -53,7 +53,7 @@ class Note{
   }
 
   static updateOne(criteria) {
-    return storage.update(this);
+    return storage.update(criteria);
   }
 
   static deleteOne(id) {
